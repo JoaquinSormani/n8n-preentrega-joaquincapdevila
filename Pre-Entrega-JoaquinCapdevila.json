@@ -1,0 +1,234 @@
+{
+  "name": "Pre-Entrega-JoaquinCapdevila",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "check-clima",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "0e6702b8-8687-48c5-a2f4-80fa8afa1fa9",
+      "name": "Webhook (Datos Ubicación)",
+      "webhookId": "d2468718-097b-48d6-9b3b-77e57b2557be"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.body.lat }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.body.lon }}"
+            },
+            {
+              "name": "current_weather",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        0
+      ],
+      "id": "cac1cd83-8788-46fd-8b30-b7f5fbe3ed43",
+      "name": "API - Consultar Clima"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "37cbe19c-d9ed-4f55-b026-bb9fdc8d0c09",
+              "leftValue": "={{ $json.current_weather.temperature }}",
+              "rightValue": "={{ $('Webhook (Datos Ubicación)').item.json.body.temp_maxima }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        0
+      ],
+      "id": "ab2c0bd5-3ed9-4c3f-9bc7-246aabbc6b72",
+      "name": "¿Temperatura > Límite?"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook (Datos Ubicación)').item.json.body.correo }}",
+        "subject": "=Alerta de Calor: {{ $json.current_weather.temperature }}°C",
+        "message": "=<div style=\"font-family: 'Arial', sans-serif; background-color: #e0f7fa; padding: 40px 0;\">   <div style=\"max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);\">          <div style=\"background-color: #ff5252; padding: 30px; text-align: center;\">       <h1 style=\"color: #ffffff; margin: 0; font-size: 26px; font-weight: 800;\">🌡️ ALERTA DE CALOR</h1>       <p style=\"color: #ffebee; margin: 5px 0 0 0; font-size: 16px;\">Detectado en {{ $('Webhook (Datos Ubicación)').item.json.body.ciudad }}</p>     </div>      <div style=\"padding: 40px 30px; text-align: center; color: #37474f;\">       <p style=\"font-size: 18px; margin-bottom: 25px;\">         Hola, las condiciones actuales superan tus parámetros de seguridad.       </p>        <div style=\"background-color: #fff3e0; border-left: 6px solid #ff9800; padding: 20px; border-radius: 4px; text-align: left; display: inline-block; width: 80%;\">         <p style=\"margin: 5px 0; font-size: 16px;\">           📍 <strong>Ubicación:</strong> {{ $('Webhook (Datos Ubicación)').item.json.body.ciudad }}         </p>         <p style=\"margin: 5px 0; font-size: 16px;\">           🔥 <strong>Temp. Actual:</strong> <span style=\"font-size: 22px; color: #d32f2f; font-weight: bold;\">{{ $json.current_weather.temperature }}°C</span>         </p>         <p style=\"margin: 5px 0; font-size: 14px; color: #78909c;\">           ⚠️ <strong>Tu Límite:</strong> {{ $('Webhook (Datos Ubicación)').item.json.body.temp_maxima }}°C         </p>       </div>        <br><br>       <a href=\"https://www.google.com/search?q=clima+{{ $('Webhook (Datos Ubicación)').item.json.body.ciudad }}\" style=\"background-color: #00bcd4; color: white; padding: 12px 24px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 14px;\">Ver Pronóstico Extendido</a>     </div>      <div style=\"background-color: #b2ebf2; padding: 15px; text-align: center; font-size: 11px; color: #006064;\">       Notificación enviada a {{ $('Webhook (Datos Ubicación)').item.json.body.correo }} vía n8n workflow.     </div>   </div> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        -96
+      ],
+      "id": "02f33cbb-b197-4aa8-838e-90e899891631",
+      "name": "Enviar Alerta Calor",
+      "webhookId": "d4bd3b01-4c46-471f-9bc3-73682feb44b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1x6Y1tOxwrGN4hWj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n**Función:** Recibe coordenadas (`lat`, `lon`) y un umbral de temperatura (`temp_maxima`).",
+        "height": 528,
+        "width": 192,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "ed13ad18-caa3-4d65-9da9-5e2163a94d25",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n**API Open-Meteo:** Consulta el pronóstico en tiempo real usando las coordenadas provistas. No requiere API Key.",
+        "height": 528,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        112,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "14f009df-d139-4912-b03e-5e42cee13e43",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n**Condicional (IF):** Evalúa si la temperatura actual (`current_weather.temperature`) supera el límite establecido por el usuario.\n**Notificación (Gmail):** Si la condición es verdadera (True), envía un correo de advertencia con los datos actuales.\n**Log Seguro (False):** Si la temperatura es segura, registra el evento sin enviar notificaciones.",
+        "height": 528,
+        "width": 544,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        512,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "2d4235ed-91d5-4b73-bb52-44862e662036",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f3f67a27-a96b-44ed-8e53-eaf5058511db",
+              "name": "temp_segura",
+              "value": "true",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        96
+      ],
+      "id": "8d533218-4060-4268-9558-feab6c2f6b86",
+      "name": "Log: Temperatura segura"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Datos Ubicación)": {
+      "main": [
+        [
+          {
+            "node": "API - Consultar Clima",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API - Consultar Clima": {
+      "main": [
+        [
+          {
+            "node": "¿Temperatura > Límite?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Temperatura > Límite?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Alerta Calor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Temperatura segura",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8c582c9d-a53b-4072-9bf2-abcc87966a54",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5984f16e9b8445e54fb864f33c0f9a2cdc358cfc51eb6b582a425f1da57f4e0d"
+  },
+  "id": "rh9LRwslBdHZvaNztYyz0",
+  "tags": []
+}
